@@ -109,3 +109,35 @@ chrome.runtime.onMessageExternal.addListener(
         return true;
     },
 );
+
+// Badge helper functions
+function setPendingBadge() {
+    chrome.action.setBadgeText({ text: "1" });
+    chrome.action.setBadgeBackgroundColor({ color: "#2f5bd3" });
+}
+
+function clearPendingBadge() {
+    chrome.action.setBadgeText({ text: "" });
+}
+
+// Sync badge with pendingJob in storage
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "local" && changes.pendingJob) {
+        if (changes.pendingJob.newValue) {
+            setPendingBadge();
+        } else {
+            clearPendingBadge();
+        }
+    }
+});
+
+// Initialize badge on service worker startup
+async function initializeBadge() {
+    const result = await chrome.storage.local.get(["pendingJob"]);
+    if (result.pendingJob) {
+        setPendingBadge();
+    } else {
+        clearPendingBadge();
+    }
+}
+initializeBadge();
