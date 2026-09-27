@@ -18,10 +18,21 @@ async function signup(req, res) {
                 error: "Name, email, and password are required"
             });
         }
+
         const normalizedEmail = email.trim().toLowerCase();
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(normalizedEmail)) {
+            return res.status(400).json({
+                error: "Please enter a valid email address"
+            });
+        }
+
         const existingUser = await User.findOne({
             email: normalizedEmail
         });
+
         if (existingUser) {
             return res.status(409).json({
                 error: "Email is already registered"
