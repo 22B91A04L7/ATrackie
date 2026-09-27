@@ -609,3 +609,98 @@
   --primary: #2f5bd3;
   font-weight: bold; 
 }
+
+/* Extension header polish */
+
+.extension-header {
+  gap: 10px;
+  padding: 12px 14px 12px 16px;
+  background: linear-gradient(180deg, #17254a 0%, var(--heading) 100%);
+  box-shadow: 0 1px 0 rgba(20, 33, 61, 0.08);
+}
+
+.extension-header .brand-mark {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+.extension-header .brand-copy {
+  flex: 1 1 auto;
+}
+
+.extension-header h1 {
+  overflow: hidden;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.extension-header .brand-copy p {
+  overflow: hidden;
+  color: #b9c4dc;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.extension-header .header-dashboard-button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  min-height: 32px;
+  padding: 0 11px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 7px;
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    transform 120ms ease;
+}
+
+.extension-header .header-dashboard-button:hover:not(:disabled) {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.extension-header .header-dashboard-button:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  transform: scale(0.97);
+}
+
+.extension-header .header-dashboard-button:focus-visible {
+  outline: 2px solid #9db4ff;
+  outline-offset: 2px;
+}
+
+.extension-header .header-dashboard-icon {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+}
+
+@media (max-width: 320px) {
+  .extension-header .header-dashboard-label {
+    display: none;
+  }
+
+  .extension-header .header-dashboard-button {
+    padding: 0 9px;
+  }
+}
