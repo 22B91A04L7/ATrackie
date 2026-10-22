@@ -5,6 +5,7 @@ function JobSummary({
   onCompleteDetailsManually,
   duplicate,
   error,
+  saving,
 }) {
   const hasMetadata = job.location || job.experience || job.salary;
 
@@ -75,8 +76,8 @@ function JobSummary({
             View Application
           </button>
         ) : (
-          <button className="primary-button" type="button" onClick={onTrackJob}>
-            Track This Job
+          <button className="primary-button" type="button" onClick={onTrackJob} disabled={saving} aria-busy={saving}>
+            {saving ? "Saving..." : "Track This Job"}
           </button>
         ))}
     </section>

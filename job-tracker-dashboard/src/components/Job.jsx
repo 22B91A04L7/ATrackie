@@ -1,3 +1,4 @@
+import { apiRequest } from "../utils/apiRequest";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { STATUS_TRANSITIONS } from "../constants/applicationStatus";
@@ -38,7 +39,7 @@ function Job({
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`${API_URL}/api/jobs/${job._id}/status`, {
+      const response = await apiRequest(`${API_URL}/api/jobs/${job._id}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -55,16 +56,15 @@ function Job({
         return;
       }
 
-      if (!response.ok) {
-        throw new Error("Failed to update status");
-      }
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to update status");
 
       setStatus(pendingStatus);
       onStatusChange(job._id, pendingStatus);
       setPendingStatus(null);
     } catch (error) {
       console.error("Status update error:", error);
-      setError("Could not update status");
+      setError(error.message || "Could not update status");
     } finally {
       setSaving(false);
     }

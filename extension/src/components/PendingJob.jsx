@@ -1,4 +1,4 @@
-function PendingJob({ job, onApplied, onNotYet, onDiscard, saving }) {
+function PendingJob({ job, onApplied, onNotYet, onDiscard, saving, error }) {
   return (
     <section className="pending-job state-panel">
       <div className="status-label">
@@ -13,6 +13,7 @@ function PendingJob({ job, onApplied, onNotYet, onDiscard, saving }) {
       </div>
 
       <p className="pending-intro">Have you applied for this job?</p>
+      {error && <p className="error-message" role="alert">{error}</p>}
 
       {(job.location || job.salary) && (
         <dl className="pending-job-details">

@@ -1,0 +1,121 @@
+[
+  {
+    "name": "Happy path: save/list/read/status/timeline",
+    "status": "observed",
+    "details": "PASS: valid flow succeeds; backward transition rejected"
+  },
+  {
+    "name": "Two-account isolation across list/read/status/delete/bulk/duplicate",
+    "status": "observed",
+    "details": "PASS: tested operations do not expose or mutate the other account"
+  },
+  {
+    "name": "Missing/tampered/expired authentication",
+    "status": "observed",
+    "details": "PASS: all rejected with 401"
+  },
+  {
+    "name": "Sequential duplicate",
+    "status": "observed",
+    "details": "PASS: 409"
+  },
+  {
+    "name": "Concurrent duplicate saves",
+    "status": "observed",
+    "details": {
+      "statuses": [
+        201,
+        201,
+        409,
+        409,
+        201,
+        201,
+        201,
+        201,
+        201,
+        201
+      ],
+      "savedDocuments": 8,
+      "indexes": []
+    }
+  },
+  {
+    "name": "Missing request bodies",
+    "status": "observed",
+    "details": [
+      {
+        "endpoint": "/api/jobs",
+        "status": 500
+      },
+      {
+        "endpoint": "/api/jobs/check-duplicate",
+        "status": 500
+      },
+      {
+        "endpoint": "/api/jobs/extract",
+        "status": 500
+      },
+      {
+        "endpoint": "/api/auth/login",
+        "status": 500
+      },
+      {
+        "endpoint": "/api/auth/signup",
+        "status": 500
+      }
+    ]
+  },
+  {
+    "name": "Concurrent status updates (controlled overlapping reads)",
+    "status": "observed",
+    "details": {
+      "statuses": [
+        200,
+        200
+      ],
+      "timeline": [
+        "Applied",
+        "Interview",
+        "Interview"
+      ]
+    }
+  },
+  {
+    "name": "Optional field validation",
+    "status": "observed",
+    "details": {
+      "status": 201,
+      "salary": "123",
+      "requiredSkills": [
+        "SQL"
+      ]
+    }
+  },
+  {
+    "name": "One-character signup password",
+    "status": "observed",
+    "details": {
+      "status": 201
+    }
+  },
+  {
+    "name": "Extraction input and provider failure",
+    "status": "observed",
+    "details": "PASS: stubbed success, oversized input rejection, generic provider error"
+  },
+  {
+    "name": "Successful owner single and bulk deletion",
+    "status": "observed",
+    "details": "PASS"
+  },
+  {
+    "name": "Extension storage account switching and logout (Chrome API simulation)",
+    "status": "observed",
+    "details": {
+      "pendingSurvivesAccountSwitch": true,
+      "manualDraftSurvivesLogout": true,
+      "tokenRemoved": true,
+      "pendingRemoved": true
+    }
+  }
+]

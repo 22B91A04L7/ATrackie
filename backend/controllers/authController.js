@@ -5,7 +5,7 @@ const User = require("../models/User")
 //signup logic
 async function signup(req, res) {
     try {
-        const { name, email, password } = req.body;
+        const { name, email, password } = req.body || {};
         if (
             typeof name !== "string" ||
             typeof email !== "string" ||
@@ -17,6 +17,10 @@ async function signup(req, res) {
             return res.status(400).json({
                 error: "Name, email, and password are required"
             });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({ error: "Password must be at least 8 characters long" });
         }
 
         const normalizedEmail = email.trim().toLowerCase();
@@ -64,7 +68,7 @@ async function signup(req, res) {
 //login logic
 async function login(req, res) {
     try {
-        const { email, password } = req.body;
+        const { email, password } = req.body || {};
 
         if (
             typeof email !== "string" ||

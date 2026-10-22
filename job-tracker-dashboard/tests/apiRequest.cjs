@@ -1,0 +1,26 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
+const source = fs.readFileSync(path.join(__dirname, '../src/utils/apiRequest.js'), 'utf8').replace('export async function', 'async function');
+let response;
+const context = { URL, fetch: async () => { if (response instanceof Error) throw response; return response; } };
+vm.createContext(context); vm.runInContext(source, context);
+const call = () => context.apiRequest('http://localhost:5000/api/jobs');
+(async () => {
+  response = new Error('offline');
+  await assert.rejects(call(), /Could not reach/);
+  response = {status: 502, ok: false, json: async () => { throw new SyntaxError(); }};
+  await assert.rejects(call(), /HTTP 502/);
+  response.status = 401;
+  const unauthorized = await call();
+  assert.equal(unauthorized.status, 401);
+  assert.match((await unauthorized.json()).error, /sign in/);
+  response = {status: 429, ok: false, json: async () => ({error: 'Try again in 60 seconds'})};
+  await assert.rejects(call(), /60 seconds/);
+  response = {status: 200, ok: true, json: async () => ({})};
+  await assert.rejects(call(), /incomplete/);
+  response.json = async () => ({jobs: []});
+  assert.equal((await (await call()).json()).jobs.length, 0);
+  console.log('PASS dashboard offline, non-JSON errors, non-JSON 401, rate-limit text, incomplete and valid data');
+})().catch(error => { console.error(error); process.exitCode = 1; });

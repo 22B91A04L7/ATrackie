@@ -24,23 +24,35 @@ function ManualEntryPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [pageToken] = useState(() => localStorage.getItem("token"));
+  const [draftRevision, setDraftRevision] = useState(null);
+  const [draftReady, setDraftReady] = useState(false);
 
   useEffect(() => {
+    if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
+      queueMicrotask(() => setError("Connect the ATrackie extension before completing this opportunity."));
+      return;
+    }
     chrome.runtime.sendMessage(
       EXTENSION_ID,
-      { type: "GET_MANUAL_ENTRY_JOB" },
+      { type: "GET_MANUAL_ENTRY_JOB", token: pageToken },
       (response) => {
         if (chrome.runtime.lastError) {
           console.error(
             "Could not get manual entry job:",
             chrome.runtime.lastError.message,
           );
+          setError("Could not connect to the extension. Reconnect your account and reload this page.");
           return;
         }
 
-        if (!response?.success || !response.job) {
+        if (!response?.success) {
+          setError(response?.error || "Could not load your draft.");
           return;
         }
+        setDraftRevision(response.revision);
+        setDraftReady(true);
+        if (!response.job) return;
 
         setFormData((current) => ({
           ...current,
@@ -57,7 +69,7 @@ function ManualEntryPage() {
         }));
       },
     );
-  }, []);
+  }, [pageToken]);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -75,7 +87,12 @@ function ManualEntryPage() {
   function handleSubmit(event) {
     event.preventDefault();
 
-    if (saving) {
+    if (saving || !draftReady) {
+      return;
+    }
+
+    if (localStorage.getItem("token") !== pageToken) {
+      setError("Your account changed. Reload this page before saving.");
       return;
     }
 
@@ -102,6 +119,8 @@ function ManualEntryPage() {
       EXTENSION_ID,
       {
         type: "SAVE_MANUAL_ENTRY_JOB",
+        token: pageToken,
+        revision: draftRevision,
         job: completedJob,
       },
       (response) => {
@@ -389,7 +408,7 @@ function ManualEntryPage() {
               Cancel
             </button>
 
-            <button className="primary-button" type="submit" disabled={saving}>
+            <button className="primary-button" type="submit" disabled={saving || !draftReady}>
               {saving ? "Saving..." : "Track Opportunity"}
             </button>
           </div>

@@ -1,7 +1,9 @@
+import { DASHBOARD_URL } from "../config";
+
 function ApplicationSaved({ job, onCaptureAnother }) {
   function handleViewDashboard() {
     chrome.tabs.create({
-      url: "https://atrackie.vercel.app/jobs",
+      url: `${DASHBOARD_URL}/jobs`,
     });
   }
 

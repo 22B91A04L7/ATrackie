@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Account switch and logout",
+    "inheritedPending": true,
+    "manualDraftSurvivesLogout": true,
+    "tokenCleared": true
+  },
+  {
+    "name": "Manual-entry handoff",
+    "result": "PASS: pending created and draft removed"
+  },
+  {
+    "name": "Non-JSON response 401",
+    "message": "Unexpected token < in JSON",
+    "tokenCleared": false
+  },
+  {
+    "name": "Non-JSON response 502",
+    "message": "Unexpected token < in JSON",
+    "tokenCleared": false
+  },
+  {
+    "name": "Save failure preserves pending work",
+    "result": "PASS",
+    "capturedError": "network unavailable",
+    "errorPropPassedToPending": false,
+    "savingHardcodedFalse": true
+  },
+  {
+    "name": "Repeated confirmation before first response",
+    "saveRequests": 2
+  },
+  {
+    "name": "Manual page without Chrome API",
+    "error": "chrome is not defined"
+  }
+]

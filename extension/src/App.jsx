@@ -1,16 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getActiveTab } from "./utils/chrome";
 import "./App.css";
 import { extractJob, saveJob, checkJobDuplicate } from "./services/jobService";
-import { getAuthToken } from "./utils/auth";
+import { getSession } from "./utils/session";
 import PendingJob from "./components/PendingJob";
 import ExtensionHeader from "./components/ExtensionHeader";
 import ApplicationSaved from "./components/ApplicationSaved";
 import JobExtractor from "./components/JobExtractor";
 import JobSummary from "./components/JobSummary";
 import {
-  getPendingJob,
+  getDraftState,
   setPendingJob as savePendingJob,
+  setManualEntryJob,
+  claimLegacyDrafts,
   removePendingJob,
 } from "./utils/storage";
 import { DASHBOARD_URL } from "./config";
@@ -33,21 +35,46 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [duplicateJobId, setDuplicateJobId] = useState(null);
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [hasLegacy, setHasLegacy] = useState(false);
+  const [hasManual, setHasManual] = useState(false);
+  const sessionRef = useRef(null);
+  const generation = useRef(0);
+  const busy = useRef(false);
 
   useEffect(() => {
+    let disposed = false;
+    const invalidateOperations = () => { generation.current++; };
     async function initializeExtension() {
+      const current = ++generation.current;
+      sessionRef.current = null;
+      busy.current = false;
+      setLoading(false);
+      setSaving(false);
+      setIsAuthenticated(false);
+      setPendingJob(null);
+      setJobData(null);
+      setSavedJob(null);
+      setError("");
+      setDuplicateJobId(null);
+      setHasLegacy(false);
+      setHasManual(false);
+      setStep("initial");
       try {
-        await getAuthToken();
+        const session = await getSession();
+        const state = await getDraftState(session);
+        if (disposed || current !== generation.current) return;
+        sessionRef.current = session;
         setIsAuthenticated(true);
-
-        const job = await getPendingJob();
-
-        if (job) {
-          setPendingJob(job);
+        setSessionExpired(false);
+        setHasLegacy(state.hasLegacy);
+        setHasManual(state.hasManual);
+        if (state.pending) {
+          setPendingJob(state.pending);
           setStep("pending");
         }
-      } catch (error) {
-        setIsAuthenticated(false);
+      } catch {
+        if (!disposed && current === generation.current) setIsAuthenticated(false);
       }
     }
 
@@ -55,24 +82,42 @@ function App() {
 
     function handleStorageChange(changes, areaName) {
       if (areaName === "local" && changes.token) {
-        if (changes.token.newValue) {
-          setIsAuthenticated(true);
-          setSessionExpired(false);
-        } else {
-          setIsAuthenticated(false);
+        initializeExtension();
+      } else if (areaName === "local" && !busy.current && sessionRef.current) {
+        const prefix = `draft:${sessionRef.current.userId}:`;
+        if (changes[`${prefix}pending`]) {
+          const draft = changes[`${prefix}pending`].newValue || null;
+          setPendingJob(draft);
+          setStep(previous => draft ? "pending" : previous === "pending" ? "initial" : previous);
         }
+        if (changes[`${prefix}manual`]) setHasManual(Boolean(changes[`${prefix}manual`].newValue));
       }
     }
 
     chrome.storage.onChanged.addListener(handleStorageChange);
 
     return () => {
+      disposed = true;
+      invalidateOperations();
       chrome.storage.onChanged.removeListener(handleStorageChange);
     };
   }, []);
 
+  function beginOperation() {
+    if (busy.current || !sessionRef.current) return null;
+    busy.current = true;
+    setError("");
+    return { session: sessionRef.current, generation: generation.current };
+  }
+  const isCurrent = (operation) => operation.generation === generation.current;
+  function finishOperation(operation) {
+    if (isCurrent(operation)) { busy.current = false; setSaving(false); setLoading(false); }
+  }
+
   //handles raw text extraction from web page
   async function handleGetJobDetails() {
+    const operation = beginOperation();
+    if (!operation) return;
     setLoading(true);
     setError("");
 
@@ -92,7 +137,9 @@ function App() {
 
       const pageText = results[0].result.slice(0, 30000);
 
-      const extractedJob = await extractJob(pageText);
+      if (!isCurrent(operation)) return;
+      const extractedJob = await extractJob(pageText, operation.session.token);
+      if (!isCurrent(operation)) return;
       const jobWithSource = {
         ...extractedJob,
         url: activeTab.url || "",
@@ -102,6 +149,7 @@ function App() {
       setJobData(jobWithSource);
       setStep("extracted");
     } catch (error) {
+      if (!isCurrent(operation)) return;
       console.error("Could not get job details:", error);
 
       if (
@@ -115,24 +163,25 @@ function App() {
 
       setError(error.message);
     } finally {
-      setLoading(false);
+      finishOperation(operation);
     }
   }
 
   // AI-extracted data is tracked as-is, no edit step.
   async function handleTrackJob() {
-    if (!jobData.title || !jobData.company || !jobData.url || !jobData.source) {
-      await chrome.storage.local.set({
-        manualEntryJob: jobData,
-      });
-
-      setError(
-        "Could not identify enough information to track this opportunity.",
-      );
-      return;
-    }
+    const operation = beginOperation();
+    if (!operation) return;
+    setSaving(true);
     try {
-      const duplicateResult = await checkJobDuplicate(jobData.url);
+      if (!jobData.title || !jobData.company || !jobData.url || !jobData.source) {
+        await setManualEntryJob(jobData, operation.session);
+        if (!isCurrent(operation)) return;
+        setHasManual(true);
+        setError("Could not identify enough information to track this opportunity.");
+        return;
+      }
+      const duplicateResult = await checkJobDuplicate(jobData.url, operation.session.token);
+      if (!isCurrent(operation)) return;
 
       if (duplicateResult.exists) {
         setDuplicateJobId(duplicateResult.jobId);
@@ -140,14 +189,16 @@ function App() {
         return;
       }
       setDuplicateJobId(null);
-      await savePendingJob(jobData);
-
-      setPendingJob(jobData);
+      const draft = await savePendingJob(jobData, operation.session);
+      if (!isCurrent(operation)) return;
+      setPendingJob(draft);
       setStep("pending");
       setJobData(null);
       setError("");
     } catch (error) {
-      setError(error.message);
+      if (isCurrent(operation)) setError(error.message);
+    } finally {
+      finishOperation(operation);
     }
   }
 
@@ -169,8 +220,7 @@ function App() {
   }
 
   function handleNotYet() {
-    // pendingJob stays in chrome.storage.local untouched.
-    // Closing the popup is enough; reopening reads it back via getPendingJob().
+    // Reopening restores this account's draft from the background worker.
     try {
       window.close();
     } catch (error) {
@@ -179,29 +229,60 @@ function App() {
   }
 
   async function handleApplied() {
+    const operation = beginOperation();
+    if (!operation) return;
+    setSaving(true);
     try {
-      const savedJobResponse = await saveJob(pendingJob);
-
-      await removePendingJob();
+      const savedJobResponse = await saveJob(pendingJob.job, operation.session.token);
+      if (!isCurrent(operation)) return;
+      const result = await removePendingJob(operation.session, pendingJob.revision);
+      if (!isCurrent(operation)) return;
+      if (!result.removed) throw new Error("Your pending application changed. Reopen the extension to see the latest draft.");
 
       setPendingJob(null);
       setSavedJob(savedJobResponse.job);
       setStep("saved");
     } catch (error) {
       console.error("Could not save job:", error);
-      setError(error.message);
+      if (isCurrent(operation)) setError(error.message);
+    } finally {
+      finishOperation(operation);
     }
   }
 
   async function handleDiscard() {
+    const operation = beginOperation();
+    if (!operation) return;
+    setSaving(true);
     try {
-      await removePendingJob();
+      const result = await removePendingJob(operation.session, pendingJob.revision);
+      if (!isCurrent(operation)) return;
+      if (!result.removed) throw new Error("Your pending application changed. Reopen the extension before discarding it.");
       setPendingJob(null);
       setStep("initial");
       setError("");
     } catch (error) {
-      setError(error.message);
+      if (isCurrent(operation)) setError(error.message);
+    } finally {
+      finishOperation(operation);
     }
+  }
+
+  async function handleRestoreLegacy() {
+    const operation = beginOperation();
+    if (!operation) return;
+    setSaving(true);
+    try {
+      await claimLegacyDrafts(operation.session);
+      const state = await getDraftState(operation.session);
+      if (!isCurrent(operation)) return;
+      setHasLegacy(state.hasLegacy);
+      setHasManual(state.hasManual);
+      setPendingJob(state.pending);
+      setStep(state.pending ? "pending" : "initial");
+    } catch (error) {
+      if (isCurrent(operation)) setError(error.message);
+    } finally { finishOperation(operation); }
   }
 
   if (!isAuthenticated) {
@@ -249,6 +330,14 @@ function App() {
         className={`extension-body extension-step-${step}`}
         aria-live="polite"
       >
+        {hasLegacy && (
+          <section className="state-panel">
+            <h2>Restore earlier drafts?</h2>
+            <p>This browser has unfinished work from an earlier version without an account owner. Restore it only if you created it and are signed in to the correct account.</p>
+            <button className="primary-button" type="button" disabled={saving || loading} onClick={handleRestoreLegacy}>These drafts are mine — restore</button>
+            <button className="secondary-button" type="button" disabled={saving || loading} onClick={() => setHasLegacy(false)}>Not now</button>
+          </section>
+        )}
         {step === "initial" && (
           <JobExtractor
             loading={loading}
@@ -257,9 +346,14 @@ function App() {
           />
         )}
 
+        {step === "initial" && hasManual && (
+          <button className="secondary-button" type="button" onClick={handleCompleteDetailsManually}>Continue manual entry</button>
+        )}
+
         {step === "extracted" && jobData && (
           <JobSummary
             job={jobData}
+            saving={saving}
             error={error}
             duplicate={Boolean(duplicateJobId)}
             onTrackJob={handleTrackJob}
@@ -270,11 +364,12 @@ function App() {
 
         {step === "pending" && pendingJob && (
           <PendingJob
-            job={pendingJob}
+            job={pendingJob.job}
+            error={error}
             onApplied={handleApplied}
             onNotYet={handleNotYet}
             onDiscard={handleDiscard}
-            saving={false}
+            saving={saving}
           />
         )}
 

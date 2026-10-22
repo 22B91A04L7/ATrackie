@@ -1,3 +1,4 @@
+import { apiRequest } from "../utils/apiRequest";
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import DeleteApplication from "../components/DeleteApplication";
@@ -18,7 +19,7 @@ function JobDetailsPage() {
       try {
         const token = localStorage.getItem("token");
 
-        const response = await fetch(`${API_URL}/api/jobs/${id}`, {
+        const response = await apiRequest(`${API_URL}/api/jobs/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -68,7 +69,7 @@ function JobDetailsPage() {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`${API_URL}/api/jobs/${id}`, {
+      const response = await apiRequest(`${API_URL}/api/jobs/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

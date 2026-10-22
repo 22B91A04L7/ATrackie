@@ -69,7 +69,7 @@ async function createJob(req, res) {
             education,
             url,
             source
-        } = req.body;
+        } = req.body || {};
 
         if (
             typeof title !== "string" ||
@@ -110,7 +110,8 @@ async function createJob(req, res) {
 
         if (existingJob) {
             return res.status(409).json({
-                error: "This job application is already in your tracker."
+                error: "This job application is already in your tracker.",
+                job: existingJob
             });
         }
 
@@ -156,6 +157,11 @@ async function createJob(req, res) {
         });
 
     } catch (error) {
+        if (error.code === 11000) {
+            return res.status(409).json({
+                error: "This job application is already in your tracker."
+            });
+        }
         console.error("Save job error:", error);
 
         if (error.name === "ValidationError" || error.name === "CastError") {
@@ -173,7 +179,7 @@ async function createJob(req, res) {
 //controller to extract job info
 async function extractJob(req, res) {
     try {
-        const { pageText } = req.body;
+        const { pageText } = req.body || {};
         if (typeof pageText !== "string" || !pageText.trim()) {
             return res.status(400).json({
                 error: "Page text is required"
@@ -209,7 +215,7 @@ async function updateJobStatus(req, res) {
                 error: "Request body must be valid JSON"
             });
         }
-        const { status } = req.body;
+        const { status } = req.body || {};
         if (!mongoose.isValidObjectId(id)) {
             return res.status(400).json({
                 error: "Invalid job ID format"
@@ -239,15 +245,24 @@ async function updateJobStatus(req, res) {
             });
         }
 
-        job.status = status;
-        job.timeline.push({
-            status,
-            timestamp: new Date()
-        });
-        await job.save();
+        // Compare the status read above as part of the write. Only one racing
+        // request can move this application from that status.
+        const updatedJob = await Job.findOneAndUpdate(
+            { _id: id, userId: req.user.userId, status: job.status },
+            {
+                $set: { status },
+                $push: { timeline: { status, timestamp: new Date() } }
+            },
+            { returnDocument: "after", runValidators: true }
+        );
+        if (!updatedJob) {
+            return res.status(409).json({
+                error: "This application changed in another request. Refresh before updating its status."
+            });
+        }
         res.status(200).json({
             message: "Job status updated successfully",
-            job
+            job: updatedJob
         });
     } catch (error) {
         console.error("Update job status error:", error);
@@ -295,7 +310,7 @@ async function deleteJob(req, res) {
 //controller to delete multiple jobs
 async function deleteJobs(req, res) {
     try {
-        const { jobIds } = req.body;
+        const { jobIds } = req.body || {};
 
         if (!Array.isArray(jobIds) || jobIds.length === 0) {
             return res.status(400).json({
@@ -334,7 +349,7 @@ async function deleteJobs(req, res) {
 // Controller to check whether a job URL is already tracked
 async function checkJobDuplicate(req, res) {
     try {
-        const { url } = req.body;
+        const { url } = req.body || {};
 
         if (typeof url !== "string" || !url.trim()) {
             return res.status(400).json({

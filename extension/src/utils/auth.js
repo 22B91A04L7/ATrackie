@@ -18,15 +18,7 @@ export function getAuthToken() {
 }
 
 //To clear auth token from chrome storage
-export function clearAuthToken() {
-    return new Promise((resolve, reject) => {
-        chrome.storage.local.remove(["token"], () => {
-            if (chrome.runtime.lastError) {
-                reject(new Error(chrome.runtime.lastError.message));
-                return;
-            }
-
-            resolve();
-        });
-    });
+export async function clearAuthToken(expectedToken) {
+    const result = await chrome.runtime.sendMessage({ type: "CLEAR_EXPIRED_TOKEN", token: expectedToken });
+    if (!result?.success) throw new Error(result?.error || "Could not clear expired authentication.");
 }

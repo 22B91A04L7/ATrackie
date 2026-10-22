@@ -1,3 +1,5 @@
+import { apiRequest } from "../utils/apiRequest";
+import PasswordInput from "../components/PasswordInput";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { API_URL } from "../config";
@@ -18,7 +20,7 @@ function Signup() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/signup`, {
+      const response = await apiRequest(`${API_URL}/api/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,15 +98,17 @@ function Signup() {
 
           <div className="form-field">
             <label htmlFor="password">Password</label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Create a secure password"
               autoComplete="new-password"
+              minLength={8}
+              aria-describedby="password-hint"
               required
             />
+            <small id="password-hint">Use at least 8 characters.</small>
           </div>
 
           {error && (

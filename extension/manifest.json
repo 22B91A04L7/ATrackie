@@ -8,7 +8,7 @@
   },
   "externally_connectable": {
   "matches": [
-    "https://atrackie.vercel.app/*"
+    "http://localhost:5173/*"
   ]
 },
   "background": {
@@ -20,7 +20,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://atrackie-backend.onrender.com/*"
+     "http://localhost:5000/*"
   ],
   "content_scripts": [
     {

@@ -1,3 +1,4 @@
+import { apiRequest } from "../utils/apiRequest";
 import { useEffect, useState } from "react";
 import Job from "../components/Job";
 import { useNavigate } from "react-router-dom";
@@ -25,8 +26,9 @@ function Dashboard() {
         EXTENSION_ID,
         {
           type: "LOGOUT",
+          token: localStorage.getItem("token"),
         },
-        (response) => {
+        () => {
           if (chrome.runtime.lastError) {
             console.warn(
               "Could not log out extension:",
@@ -89,7 +91,7 @@ function Dashboard() {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`${API_URL}/api/jobs`, {
+      const response = await apiRequest(`${API_URL}/api/jobs`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -110,7 +112,7 @@ function Dashboard() {
         throw new Error("Unable to delete the selected applications.");
       }
 
-      const data = await response.json();
+      await response.json();
 
       setJobs((currentJobs) =>
         currentJobs.filter((job) => !selectedJobIds.includes(job._id)),
@@ -137,7 +139,7 @@ function Dashboard() {
       try {
         const token = localStorage.getItem("token");
 
-        const response = await fetch(`${API_URL}/api/jobs`, {
+        const response = await apiRequest(`${API_URL}/api/jobs`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
