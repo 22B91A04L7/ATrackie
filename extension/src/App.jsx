@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { getActiveTab } from "./utils/chrome";
 import "./App.css";
+import "./polish.css";
 import { extractJob, saveJob, checkJobDuplicate } from "./services/jobService";
 import { getSession } from "./utils/session";
 import PendingJob from "./components/PendingJob";

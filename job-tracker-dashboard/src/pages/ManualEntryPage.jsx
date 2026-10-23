@@ -159,7 +159,13 @@ function ManualEntryPage() {
       return;
     }
 
-    window.open(formData.url, "_blank", "noopener,noreferrer");
+    try {
+      const posting = new URL(formData.url.trim());
+      if (!["http:", "https:"].includes(posting.protocol)) throw new Error();
+      window.location.assign(posting.href);
+    } catch {
+      setError("The posting URL must be a valid HTTP or HTTPS address.");
+    }
   }
 
   if (saved) {
@@ -200,6 +206,7 @@ function ManualEntryPage() {
           </div>
 
           <div className="manual-entry-actions">
+            {error && <p className="error" role="alert">{error}</p>}
             <button
               className="primary-button"
               type="button"

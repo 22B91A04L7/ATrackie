@@ -1,8 +1,5 @@
-import { apiRequest } from "../utils/apiRequest";
-import { useState } from "react";
+import StatusControl from "./StatusControl";
 import { useNavigate } from "react-router-dom";
-import { STATUS_TRANSITIONS } from "../constants/applicationStatus";
-import { API_URL } from "../config";
 
 function Job({
   job,
@@ -10,74 +7,9 @@ function Job({
   selectionMode,
   selected,
   onToggleSelection,
+  selectionDisabled = false,
 }) {
   const navigate = useNavigate();
-  const [status, setStatus] = useState(job.status);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [pendingStatus, setPendingStatus] = useState(null);
-
-  function handleStatusChange(event) {
-    const newStatus = event.target.value;
-
-    if (newStatus === status) {
-      return;
-    }
-
-    setError("");
-    setPendingStatus(newStatus);
-  }
-
-  async function confirmStatusChange() {
-    if (!pendingStatus || saving) {
-      return;
-    }
-
-    setSaving(true);
-    setError("");
-
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await apiRequest(`${API_URL}/api/jobs/${job._id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          status: pendingStatus,
-        }),
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem("token");
-        navigate("/login");
-        return;
-      }
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to update status");
-
-      setStatus(pendingStatus);
-      onStatusChange(job._id, pendingStatus);
-      setPendingStatus(null);
-    } catch (error) {
-      console.error("Status update error:", error);
-      setError(error.message || "Could not update status");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function cancelStatusChange() {
-    if (saving) {
-      return;
-    }
-
-    setPendingStatus(null);
-  }
-
   function openDetails() {
     navigate(`/jobs/${job._id}`);
   }
@@ -97,26 +29,27 @@ function Job({
 
   return (
     <article
-      className={`job-row${selectionMode ? " job-row-selection-mode" : ""}`}
-      role="link"
-      tabIndex="0"
+      className={`job-row${selectionMode ? " job-row-selection-mode" : ""}${selected ? " job-row-selected" : ""}`}
+      role={selectionMode ? undefined : "link"}
+      tabIndex={selectionMode ? undefined : 0}
       aria-label={`View ${job.title} at ${job.company}`}
       onClick={selectionMode ? undefined : openDetails}
       onKeyDown={selectionMode ? undefined : handleRowKeyDown}
     >
       {selectionMode && (
-        <div
+        <label
           className="job-selection"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => event.stopPropagation()}
         >
           <input
             type="checkbox"
+            disabled={selectionDisabled}
             checked={selected}
             onChange={() => onToggleSelection(job._id)}
             aria-label={`Select ${job.title} at ${job.company}`}
           />
-        </div>
+        </label>
       )}
 
       <div className="job-identity">
@@ -146,82 +79,13 @@ function Job({
           </a>
         )}
 
-        <div className="status-control">
-          <label className="visually-hidden" htmlFor={`status-${job._id}`}>
-            Status for {job.title}
-          </label>
-
-          <select
-            id={`status-${job._id}`}
-            className={`status-select status-${status
-              .toLowerCase()
-              .replaceAll(" ", "-")}`}
-            value={status}
-            onChange={handleStatusChange}
-            disabled={saving}
-            aria-busy={saving}
-          >
-            <option value={status}>{status}</option>
-
-            {STATUS_TRANSITIONS[status].map((nextStatus) => (
-              <option key={nextStatus} value={nextStatus}>
-                {nextStatus}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!selectionMode && <StatusControl job={job} onStatusChange={updated => onStatusChange(updated._id, updated.status)} />}
 
         <span className="row-chevron" aria-hidden="true">
           ›
         </span>
       </div>
 
-      {pendingStatus && (
-        <section
-          className="status-confirmation"
-          role="alertdialog"
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-          aria-labelledby={`status-confirmation-title-${job._id}`}
-          aria-describedby={`status-confirmation-description-${job._id}`}
-          aria-busy={saving}
-        >
-          <div>
-            <h4 id={`status-confirmation-title-${job._id}`}>
-              Change application status?
-            </h4>
-
-            <p id={`status-confirmation-description-${job._id}`}>
-              This application will move from {status} to {pendingStatus}.
-              Status changes cannot move backwards later.
-            </p>
-          </div>
-
-          <div className="status-confirmation-actions">
-            <button
-              type="button"
-              onClick={cancelStatusChange}
-              disabled={saving}
-            >
-              Cancel
-            </button>
-
-            <button
-              type="button"
-              onClick={confirmStatusChange}
-              disabled={saving}
-            >
-              {saving ? "Updating..." : "Change Status"}
-            </button>
-          </div>
-        </section>
-      )}
-
-      {error && (
-        <p className="row-error" role="alert">
-          {error}
-        </p>
-      )}
     </article>
   );
 }

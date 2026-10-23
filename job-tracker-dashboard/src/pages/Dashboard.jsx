@@ -294,7 +294,7 @@ function Dashboard() {
                   onClick={openDeleteConfirmation}
                   disabled={selectedJobIds.length === 0 || deleting}
                 >
-                  Delete
+                  Delete ({selectedJobIds.length})
                 </button>
               </>
             ) : (
@@ -321,7 +321,7 @@ function Dashboard() {
                     <path d="M14 11v6" />
                   </svg>
                 </span>
-                <span>Delete</span>
+                <span>Select to delete</span>
               </button>
             )}
           </div>
@@ -402,6 +402,7 @@ function Dashboard() {
                 selectionMode={selectionMode}
                 selected={selectedJobIds.includes(job._id)}
                 onToggleSelection={toggleJobSelection}
+                selectionDisabled={deleting || showDeleteConfirmation}
               />
             ))
           )}

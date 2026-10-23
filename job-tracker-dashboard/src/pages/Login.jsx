@@ -1,5 +1,6 @@
 import { apiRequest } from "../utils/apiRequest";
 import PasswordInput from "../components/PasswordInput";
+import AuthIntro from "../components/AuthIntro";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { API_URL } from "../config";
@@ -70,7 +71,8 @@ function Login() {
   }
 
   return (
-    <main className="auth-page">
+    <main className="auth-page auth-split">
+      <AuthIntro />
       <section className="auth-card" aria-labelledby="login-title">
         <div className="auth-brand">
           <span className="brand-mark" aria-hidden="true">

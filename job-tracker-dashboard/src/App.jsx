@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import ManualEntryPage from "./pages/ManualEntryPage";
 import LandingPage from "./pages/LandingPage";
 import "./App.css";
+import "./workspace.css";
 
 function App() {
   return (
