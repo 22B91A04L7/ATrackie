@@ -18,4 +18,8 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  {
+    files: ['src/**/*.{js,jsx}'],
+    languageOptions: { globals: { chrome: 'readonly' } },
+  },
 ])

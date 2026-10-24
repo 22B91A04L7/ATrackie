@@ -1,9 +1,12 @@
+import { apiRequest } from "../utils/apiRequest";
 import { useEffect, useState } from "react";
 import Job from "../components/Job";
+import Profile from "../components/Profile";
 import { useNavigate } from "react-router-dom";
 import { EXTENSION_ID, API_URL } from "../config";
 
 function Dashboard() {
+  const [showProfile, setShowProfile] = useState(false);
   const [jobs, setJobs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -25,8 +28,9 @@ function Dashboard() {
         EXTENSION_ID,
         {
           type: "LOGOUT",
+          token: localStorage.getItem("token"),
         },
-        (response) => {
+        () => {
           if (chrome.runtime.lastError) {
             console.warn(
               "Could not log out extension:",
@@ -89,7 +93,7 @@ function Dashboard() {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`${API_URL}/api/jobs`, {
+      const response = await apiRequest(`${API_URL}/api/jobs`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -101,6 +105,7 @@ function Dashboard() {
       });
 
       if (response.status === 401) {
+          if (localStorage.getItem("token") !== token) return;
         localStorage.removeItem("token");
         navigate("/login");
         return;
@@ -110,7 +115,7 @@ function Dashboard() {
         throw new Error("Unable to delete the selected applications.");
       }
 
-      const data = await response.json();
+      await response.json();
 
       setJobs((currentJobs) =>
         currentJobs.filter((job) => !selectedJobIds.includes(job._id)),
@@ -137,13 +142,14 @@ function Dashboard() {
       try {
         const token = localStorage.getItem("token");
 
-        const response = await fetch(`${API_URL}/api/jobs`, {
+        const response = await apiRequest(`${API_URL}/api/jobs`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
         if (response.status === 401) {
+          if (localStorage.getItem("token") !== token) return;
           localStorage.removeItem("token");
           navigate("/login");
           return;
@@ -224,10 +230,14 @@ function Dashboard() {
           </span>
           <span>ATrackie</span>
         </a>
+        <div className="profile-actions">
+        <button className="logout-button" type="button" aria-expanded={showProfile} onClick={() => setShowProfile(value => !value)}>Profile</button>
         <button className="logout-button" type="button" onClick={handleLogout}>
           Log out
         </button>
+        </div>
       </header>
+      {showProfile && <Profile onClose={() => setShowProfile(false)} />}
 
       <section className="career-section" aria-labelledby="career-title">
         <p className="eyebrow">Your career</p>
@@ -292,7 +302,7 @@ function Dashboard() {
                   onClick={openDeleteConfirmation}
                   disabled={selectedJobIds.length === 0 || deleting}
                 >
-                  Delete
+                  Delete ({selectedJobIds.length})
                 </button>
               </>
             ) : (
@@ -319,7 +329,7 @@ function Dashboard() {
                     <path d="M14 11v6" />
                   </svg>
                 </span>
-                <span>Delete</span>
+                <span>Select to delete</span>
               </button>
             )}
           </div>
@@ -400,6 +410,7 @@ function Dashboard() {
                 selectionMode={selectionMode}
                 selected={selectedJobIds.includes(job._id)}
                 onToggleSelection={toggleJobSelection}
+                selectionDisabled={deleting || showDeleteConfirmation}
               />
             ))
           )}

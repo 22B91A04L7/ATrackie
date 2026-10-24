@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-function protect(req, res, next) {
+async function protect(req, res, next) {
     try {
         const authHeader = req.headers.authorization;
 
@@ -17,6 +18,15 @@ function protect(req, res, next) {
             process.env.JWT_SECRET
         );
 
+        let user;
+        try {
+            user = await User.findById(decoded.userId).select("deleting");
+        } catch {
+            return res.status(503).json({ error: "Could not verify your account. Please try again." });
+        }
+        if (!user || (user.deleting && !(req.method === "DELETE" && req.originalUrl.split("?")[0] === "/api/auth/account"))) {
+            return res.status(401).json({ error: "This account is no longer active. Please sign in again." });
+        }
         req.user = {
             userId: decoded.userId
         };

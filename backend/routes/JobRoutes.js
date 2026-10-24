@@ -5,6 +5,8 @@ const { getJobs, getJobById, createJob, extractJob, updateJobStatus, deleteJob, 
     checkJobDuplicate
 } = require("../controllers/jobController")
 const protect = require("../middlewares/authMiddleware");
+const { extractionLimit } = require("../middlewares/rateLimits");
+router.use('/jobs', require("../middlewares/validateInput").validateInput);
 
 //update status of job
 router.patch("/jobs/:id/status", protect, updateJobStatus)
@@ -28,7 +30,7 @@ router.delete("/jobs", protect, deleteJobs);
 router.post("/jobs", protect, createJob);
 
 // Extract Job
-router.post("/jobs/extract", protect, extractJob);
+router.post("/jobs/extract", protect, extractionLimit, extractJob);
 
 
 module.exports = router;

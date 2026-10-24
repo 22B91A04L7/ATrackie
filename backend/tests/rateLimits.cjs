@@ -1,0 +1,34 @@
+const assert = require('node:assert/strict');
+const { EventEmitter } = require('node:events');
+const { createLimiter } = require('../middlewares/rateLimits');
+let time = 0;
+function attempt(limiter, id, status = 401, finish = true) {
+    const res = new EventEmitter();
+    res.statusCode = status;
+    res.headers = {};
+    res.setHeader = (key, value) => { res.headers[key] = value; };
+    res.status = code => { res.statusCode = code; return res; };
+    res.json = body => { res.body = body; return res; };
+    let allowed = false;
+    limiter({ ip: id, user: { userId: id } }, res, () => { allowed = true; });
+    if (allowed && finish) res.emit('finish');
+    return { allowed, res };
+}
+const login = createLimiter({ windowMs: 900000, limit: 10, key: r => r.ip, failedLoginsOnly: true, now: () => time });
+for (let i = 0; i < 15; i++) assert.ok(attempt(login, 'a', 200).allowed);
+for (let i = 0; i < 10; i++) assert.ok(attempt(login, 'a').allowed);
+const blocked = attempt(login, 'a');
+assert.equal(blocked.res.statusCode, 429);
+assert.equal(blocked.res.headers['Retry-After'], '900');
+assert.ok(attempt(login, 'b').allowed);
+time = 900000;
+assert.ok(attempt(login, 'a').allowed);
+for (let i = 0; i < 10; i++) assert.ok(attempt(login, 'parallel', 200, false).allowed);
+assert.equal(attempt(login, 'parallel').allowed, false);
+const ai = createLimiter({ windowMs: 60000, limit: 10, key: r => r.user.userId, now: () => time });
+for (let i = 0; i < 10; i++) assert.ok(attempt(ai, 'account-a', 200).allowed);
+assert.equal(attempt(ai, 'account-a').res.statusCode, 429);
+assert.ok(attempt(ai, 'account-b').allowed);
+time += 60000;
+assert.ok(attempt(ai, 'account-a').allowed);
+console.log('PASS login successes excluded; failure and concurrency limits; IP/account isolation; Retry-After; window resets');

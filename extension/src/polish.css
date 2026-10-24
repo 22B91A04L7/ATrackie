@@ -1,0 +1,33 @@
+/* Same palette and control geometry as the dashboard landing page. */
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ink: #172033; --heading: #0f172a; --muted: #667085;
+  --canvas: #f6f7fb; --line: #e4e8f0; --line-strong: #d7deea;
+  --primary: #365edc; --primary-hover: #2648b5; --primary-soft: #eef3ff;
+  --shadow-action: none;
+}
+*, *::before, *::after { box-sizing: border-box; }
+button, input, select, textarea { font: inherit; }
+.extension-header { background: white; color: var(--heading); border-bottom: 1px solid var(--line); padding: 18px 20px; }
+.extension-header p { color: var(--muted); }
+.extension-header h1 { font-size: 17px; letter-spacing: -.02em; }
+.extension-body { padding: 20px; }
+.extension-body h2 { font-size: 22px; letter-spacing: -.025em; line-height: 1.25; }
+.extension-body .section-kicker { font-size: 10px; margin-bottom: 10px !important; }
+.primary-button, .secondary-button, .discard-button { min-height: 44px; border-radius: 8px; font-size: 13px; }
+.primary-button:hover:not(:disabled) { transform: none; box-shadow: none; }
+.state-panel > .primary-button { margin-top: 12px; }
+.state-panel > .secondary-button { margin-top: 8px; }
+.extension-body .continue-manual-button { margin-top: 12px; }
+.pending-job-summary, .job-summary-meta, .saved-job-details { background: white; border: 1px solid var(--line); border-radius: 10px; }
+.job-summary-meta dd { overflow-wrap: anywhere; }
+.pending-job-summary { padding: 16px; }
+.auth-page { overflow: auto; min-height: 100svh; }
+body:has(.auth-page) { overflow: auto; }
+.auth-panel { border-radius: 16px; padding: 32px; box-shadow: 0 16px 48px #0f172a08; }
+.auth-panel h1 { letter-spacing: -.03em; }
+.auth-brand { font-size: 17px; }
+.auth-support { margin-top: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

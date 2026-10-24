@@ -1,21 +1,15 @@
 import { useEffect, useState } from "react";
 
 function AuthPage() {
-  const [message, setMessage] = useState("Waiting for authentication...");
-  const [status, setStatus] = useState("loading");
+  const [token] = useState(() => new URLSearchParams(window.location.search).get("token"));
+  const [message, setMessage] = useState(token ? "Waiting for authentication..." : "No authentication token received.");
+  const [status, setStatus] = useState(token ? "loading" : "error");
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("token");
+    if (!token) return;
 
-    if (!token) {
-      setMessage("No authentication token received.");
-      setStatus("error");
-      return;
-    }
-
-    chrome.storage.local.set({ token }, () => {
-      if (chrome.runtime.lastError) {
+    chrome.runtime.sendMessage({ type: "AUTHENTICATE", token }, (response) => {
+      if (chrome.runtime.lastError || !response?.success) {
         setMessage("Failed to save authentication.");
         setStatus("error");
         console.error(chrome.runtime.lastError);
@@ -25,7 +19,7 @@ function AuthPage() {
       setMessage("Extension authenticated successfully.");
       setStatus("success");
     });
-  }, []);
+  }, [token]);
 
   return (
     <main className="auth-page">

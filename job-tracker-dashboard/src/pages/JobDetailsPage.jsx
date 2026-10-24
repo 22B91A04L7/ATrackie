@@ -1,6 +1,8 @@
+import { apiRequest } from "../utils/apiRequest";
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import DeleteApplication from "../components/DeleteApplication";
+import StatusControl from "../components/StatusControl";
 import { API_URL } from "../config";
 
 function JobDetailsPage() {
@@ -18,13 +20,14 @@ function JobDetailsPage() {
       try {
         const token = localStorage.getItem("token");
 
-        const response = await fetch(`${API_URL}/api/jobs/${id}`, {
+        const response = await apiRequest(`${API_URL}/api/jobs/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
         if (response.status === 401) {
+          if (localStorage.getItem("token") !== token) return;
           localStorage.removeItem("token");
           navigate("/login");
           return;
@@ -68,7 +71,7 @@ function JobDetailsPage() {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch(`${API_URL}/api/jobs/${id}`, {
+      const response = await apiRequest(`${API_URL}/api/jobs/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -76,6 +79,7 @@ function JobDetailsPage() {
       });
 
       if (response.status === 401) {
+          if (localStorage.getItem("token") !== token) return;
         localStorage.removeItem("token");
         navigate("/login");
         return;
@@ -168,7 +172,7 @@ function JobDetailsPage() {
               target="_blank"
               rel="noreferrer"
             >
-              Open original posting
+              Open Job Posting
             </a>
           )}
 
@@ -196,9 +200,15 @@ function JobDetailsPage() {
         className="details-section timeline-section"
         aria-labelledby="timeline-title"
       >
+        <div className="timeline-header">
         <div className="section-heading">
           <p className="eyebrow">Progress</p>
           <h2 id="timeline-title">Application timeline</h2>
+        </div>
+        <div className="timeline-status">
+          <span className="timeline-status-label">Update status</span>
+          <StatusControl key={job._id} job={job} onStatusChange={setJob} disabled={deleting} />
+        </div>
         </div>
 
         {job.timeline && job.timeline.length > 0 ? (
@@ -277,7 +287,7 @@ function JobDetailsPage() {
           <h2 id="description-title">Job description</h2>
         </div>
 
-        <p>
+        <p className="job-description-text">
           {job.jobDescription || job.description || "Description not available"}
         </p>
       </section>

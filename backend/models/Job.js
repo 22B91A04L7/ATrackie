@@ -114,9 +114,12 @@ const jobSchema = new mongoose.Schema(
     },
 
     {
-        timestamps: true
+        timestamps: true,
+        autoIndex: false
     }
 );
+
+jobSchema.index({ userId: 1, url: 1 }, { unique: true, name: "unique_user_job_url" });
 
 const Job = mongoose.model("Job", jobSchema);
 

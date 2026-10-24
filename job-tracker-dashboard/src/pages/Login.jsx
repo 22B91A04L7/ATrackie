@@ -1,6 +1,10 @@
+import { apiRequest } from "../utils/apiRequest";
+import PasswordInput from "../components/PasswordInput";
+import AuthIntro from "../components/AuthIntro";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { EXTENSION_ID, API_URL } from "../config";
+import { API_URL } from "../config";
+import { connectExtension } from "../utils/connectExtension";
 
 function Login() {
   const navigate = useNavigate();
@@ -9,14 +13,36 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [connectionFailed, setConnectionFailed] = useState(false);
+
+  async function connectAccount(token) {
+    try {
+      await connectExtension(token);
+      navigate("/jobs");
+    } catch (error) {
+      setConnectionFailed(true);
+      setError(`You are signed in, but the extension is not connected. ${error.message}`);
+    }
+  }
+
+  async function retryConnection() {
+    setLoading(true);
+    setError("");
+    try {
+      await connectAccount(localStorage.getItem("token"));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleLogin(event) {
     event.preventDefault();
     setError("");
     setLoading(true);
+    setConnectionFailed(false);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+      const response = await apiRequest(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -35,31 +61,7 @@ function Login() {
 
       localStorage.setItem("token", data.token); // saving token to local storage
 
-      //sending token via msg to extension
-      if (
-        typeof chrome !== "undefined" &&
-        chrome.runtime &&
-        typeof chrome.runtime.sendMessage === "function"
-      ) {
-        chrome.runtime.sendMessage(
-          EXTENSION_ID,
-          {
-            type: "AUTHENTICATE",
-            token: data.token,
-          },
-          (response) => {
-            if (chrome.runtime.lastError) {
-              console.warn(
-                "Could not authenticate extension:",
-                chrome.runtime.lastError.message,
-              );
-              return;
-            }
-          },
-        );
-      }
-
-      navigate("/jobs");
+      await connectAccount(data.token);
     } catch (error) {
       console.error("Login error:", error);
       setError(error.message);
@@ -69,7 +71,8 @@ function Login() {
   }
 
   return (
-    <main className="auth-page">
+    <main className="auth-page auth-split">
+      <AuthIntro />
       <section className="auth-card" aria-labelledby="login-title">
         <div className="auth-brand">
           <span className="brand-mark" aria-hidden="true">
@@ -100,9 +103,8 @@ function Login() {
 
           <div className="form-field">
             <label htmlFor="password">Password</label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter your password"
@@ -122,6 +124,15 @@ function Login() {
             <span>{loading ? "Signing in..." : "Sign in"}</span>
           </button>
         </form>
+
+        {connectionFailed && (
+          <div className="auth-switch">
+            <button type="button" disabled={loading} onClick={retryConnection}>
+              Retry extension connection
+            </button>
+            <p><Link to="/jobs">Continue to dashboard</Link></p>
+          </div>
+        )}
 
         <p className="auth-switch">
           Don&apos;t have an account? <Link to="/signup">Create account</Link>

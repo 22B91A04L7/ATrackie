@@ -20,7 +20,7 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://atrackie-backend.onrender.com/*"
+     "https://atrackie-backend.onrender.com/*"
   ],
   "content_scripts": [
     {
