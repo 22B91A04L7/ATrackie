@@ -1,1 +1,42 @@
-.kilo/ 
+# Local assistant and editor files
+/audit/
+.kilo/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# Dependencies and generated builds (all packages)
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.tsbuildinfo
+
+# Local configuration and credentials; keep safe templates shareable
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+*.local
+
+# Runtime logs and test output
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
