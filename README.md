@@ -154,9 +154,9 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The fixed port keeps extension messaging aligned.
+Open `http://localhost:5173` for a local frontend preview. This branch targets the deployed backend; extension connection is authorized only from the deployed dashboard.
 
-**Configuration:** Both frontends use `http://localhost:5000`. Start your existing local MongoDB server. In Compass, connect to `mongodb://127.0.0.1:27017` and select `atrackie_local`. This database is separate from hosted data. AI extraction still uses the Groq API.
+**Configuration:** Both frontends use `https://atrackie-backend.onrender.com`. For fully local testing, change both API configurations and the Vite proxy target to `http://localhost:5000`, the extension dashboard URL to `http://localhost:5173`, and its manifest origins to the matching localhost URLs. Start your existing local MongoDB server and use the local backend `.env` described above. AI extraction still uses the Groq API.
 
 ### 4. Build and load the extension
 
@@ -176,14 +176,14 @@ npm run build
 
 The committed dashboard is configured for a specific extension ID. A locally loaded copy may receive a different ID, so the deployed dashboard may not connect to it without a matching dashboard configuration.
 
-Local integration is configured in:
+Deployed integration is configured in:
 
-- `extension/src/config.js`: dashboard `http://localhost:5173`, backend `http://localhost:5000`.
-- `extension/manifest.json`: local dashboard messaging and local backend permissions.
+- `extension/src/config.js`: dashboard `https://atrackie.vercel.app`, backend `https://atrackie-backend.onrender.com`.
+- `extension/manifest.json`: deployed dashboard messaging and deployed backend permissions.
 
-Rebuild and reload the extension after changing its configuration. Sign out of previous sessions and register a local account before connecting the extension.
+Rebuild and reload the extension after changing its configuration. Sign out of local sessions and sign in on the deployed dashboard before connecting the extension.
 
-Before future deployment, update both frontend API configurations to `https://atrackie-backend.onrender.com`, the extension dashboard URL to `https://atrackie.vercel.app`, and the corresponding manifest permissions. Use the hosted MongoDB environment variable on Render; never upload the local `.env`. The backend supports `npm run dev` with automatic restart and `npm start` without it.
+Use the hosted MongoDB environment variable on Render; never upload the local `.env`. The backend supports `npm run dev` with automatic restart and `npm start` without it.
 
 ## API overview
 

@@ -3,7 +3,7 @@ import { EXTENSION_ID } from "../config";
 export function connectExtension(token) {
   return new Promise((resolve, reject) => {
     if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) {
-      reject(new Error("Extension connection is unavailable. Reload the extension and open http://localhost:5173 in the same Chrome profile."));
+      reject(new Error("Extension connection is unavailable. Reload the extension and open https://atrackie.vercel.app in the same Chrome profile."));
       return;
     }
     const timer = setTimeout(() => reject(new Error("The extension did not respond. Reload it and try connecting again.")), 20000);

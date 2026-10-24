@@ -1,2 +1,2 @@
-export const DASHBOARD_URL = "http://localhost:5173";
-export const API_URL = "http://localhost:5000";
+export const DASHBOARD_URL = "https://atrackie.vercel.app";
+export const API_URL = "https://atrackie-backend.onrender.com";
