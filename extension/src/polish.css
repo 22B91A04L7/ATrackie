@@ -18,6 +18,7 @@ button, input, select, textarea { font: inherit; }
 .primary-button:hover:not(:disabled) { transform: none; box-shadow: none; }
 .state-panel > .primary-button { margin-top: 12px; }
 .state-panel > .secondary-button { margin-top: 8px; }
+.extension-body .continue-manual-button { margin-top: 12px; }
 .pending-job-summary, .job-summary-meta, .saved-job-details { background: white; border: 1px solid var(--line); border-radius: 10px; }
 .job-summary-meta dd { overflow-wrap: anywhere; }
 .pending-job-summary { padding: 16px; }

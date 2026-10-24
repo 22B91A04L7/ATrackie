@@ -20,6 +20,8 @@ async function main() {
   assert.match(db.getUri(),/^mongodb:\/\/127\.0\.0\.1:/);
   await mongoose.connect(db.getUri());
   const a = '000000000000000000000001', b = '000000000000000000000002';
+  const User = require('../models/User');
+  await User.create([{_id:a,name:'Owner A',email:'a@example.test',password:'unused'}, {_id:b,name:'Owner B',email:'b@example.test',password:'unused'}]);
   const old = {userId:a,title:'Test',company:'Test',source:'example.test',url:'https://example.test/legacy',appliedAt:new Date()};
   await Job.create([old,old]);
   await assert.rejects(ensureJobIndexes(),/Duplicate applications exist/);
@@ -42,7 +44,6 @@ async function main() {
     return {status:r.status,body:await r.json()};
   }
   assert.equal((await call('GET','/api/auth/session')).body.userId,a);
-  const User = require('../models/User');
   const bcrypt = require('bcryptjs');
   const signup = { name: 'Password test', email: 'password@example.test', password: '1234567' };
   assert.equal((await call('POST', '/api/auth/signup', signup)).status, 400);
@@ -53,6 +54,15 @@ async function main() {
   await User.create({ name: 'Legacy test', email: 'legacy@example.test', password: await bcrypt.hash('old', 12) });
   assert.equal((await call('POST', '/api/auth/login', { email: 'legacy@example.test', password: 'old' })).status, 200);
   passed.push('Signup rejects seven characters, accepts eight, and existing shorter passwords still work at login');
+  for (const password of ['a'.repeat(73), 'é'.repeat(37)]) {
+    assert.equal((await call('POST', '/api/auth/signup', {...signup, email: 'oversize@example.test', password})).status, 400);
+  }
+  assert.equal(await User.countDocuments({email: 'oversize@example.test'}), 0);
+  assert.equal((await call('POST', '/api/auth/signup', {...signup, email: 'boundary@example.test', password: 'é'.repeat(36)})).status, 201);
+  const legacyLong = 'b'.repeat(73);
+  await User.create({name: 'Legacy long', email: 'legacy-long@example.test', password: await bcrypt.hash(legacyLong, 12)});
+  assert.equal((await call('POST', '/api/auth/login', {email: 'legacy-long@example.test', password: legacyLong})).status, 200);
+  passed.push('Signup enforces 72 UTF-8 bytes, accepts the exact boundary, and preserves legacy long-password login');
   for (const [method, route] of [
     ['POST', '/api/auth/login'], ['POST', '/api/auth/signup'],
     ['POST', '/api/jobs'], ['POST', '/api/jobs/extract'],
@@ -122,6 +132,22 @@ async function main() {
   assert.equal((await call('GET', '/api/jobs')).status, 200);
   assert.equal((await call('POST', '/api/jobs', {...body, url: 'https://example.test/after-limit'})).status, 201);
   passed.push('Real routes enforce login/extraction limits; another account, listing and saving remain available');
+  const profile = await call('GET', '/api/auth/profile');
+  assert.equal(profile.body.user.email, 'a@example.test');
+  assert.equal(profile.body.user.password, undefined);
+  await User.updateOne({_id:a}, {$set:{password: await bcrypt.hash('delete-password', 12)}});
+  assert.equal((await call('DELETE', '/api/auth/account', {password:'wrong',confirmation:'DELETE'})).status,400);
+  assert.ok(await User.findById(a));
+  assert.equal((await call('DELETE', '/api/auth/account', {password:'delete-password',confirmation:'NO'})).status,400);
+  const otherJobs = await Job.countDocuments({userId:b});
+  assert.equal((await call('DELETE', '/api/auth/account', {password:'delete-password',confirmation:'DELETE'})).status,200);
+  assert.equal(await User.findById(a),null);
+  assert.equal(await Job.countDocuments({userId:a}),0);
+  assert.equal(await Job.countDocuments({userId:b}),otherJobs);
+  assert.ok(await User.findById(b));
+  assert.equal((await call('GET', '/api/auth/session')).status,401);
+  assert.equal((await call('POST', '/api/jobs',body)).status,401);
+  passed.push('Profile excludes password; deletion requires password/confirmation, preserves other users and revokes deleted-account access');
 }
 main().catch(error=>{console.error(error);process.exitCode=1;}).finally(async()=>{
   if(server)await new Promise(resolve=>server.close(resolve));

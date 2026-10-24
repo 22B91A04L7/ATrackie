@@ -45,6 +45,7 @@ export default function StatusControl({ job, onStatusChange, disabled = false })
       });
 
       if (response.status === 401) {
+          if (localStorage.getItem("token") !== token) return;
         localStorage.removeItem("token");
         navigate("/login");
         return;

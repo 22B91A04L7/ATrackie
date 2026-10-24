@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
+    deleting: { type: Boolean, default: false },
     name: {
         type: String,
         required: true,

@@ -209,6 +209,21 @@ function App() {
       url: `${DASHBOARD_URL}/jobs/manual-entry`,
     });
   }
+  async function handleStartManualEntry() {
+    const operation = beginOperation();
+    if (!operation) return;
+    setLoading(true);
+    try {
+      const tab = await getActiveTab();
+      if (!isCurrent(operation)) return;
+      await setManualEntryJob({ url: tab.url || '', source: getSourceFromUrl(tab.url || '') }, operation.session);
+      if (!isCurrent(operation)) return;
+      setHasManual(true);
+      handleCompleteDetailsManually();
+    } catch (error) {
+      if (isCurrent(operation)) setError(error.message);
+    } finally { finishOperation(operation); }
+  }
   //to view duplicate job and stops tracking again
   function handleViewDuplicateJob() {
     if (!duplicateJobId) {
@@ -310,7 +325,7 @@ function App() {
               type="button"
               onClick={() => {
                 chrome.tabs.create({
-                  url: DASHBOARD_URL,
+                  url: `${DASHBOARD_URL}/login`,
                 });
               }}
             >
@@ -348,7 +363,10 @@ function App() {
         )}
 
         {step === "initial" && hasManual && (
-          <button className="secondary-button" type="button" onClick={handleCompleteDetailsManually}>Continue manual entry</button>
+          <button className="secondary-button continue-manual-button" type="button" disabled={loading || saving} onClick={handleCompleteDetailsManually}>Continue manual entry</button>
+        )}
+        {step === "initial" && error && !hasManual && (
+          <button className="secondary-button continue-manual-button" type="button" disabled={loading || saving} onClick={handleStartManualEntry}>Enter details manually</button>
         )}
 
         {step === "extracted" && jobData && (

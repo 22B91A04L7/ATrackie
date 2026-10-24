@@ -21,6 +21,15 @@ async function matchingSession(token) {
 
 async function handleMessage(message) {
     if (!message || typeof message.type !== "string") throw new Error("Invalid request.");
+    if (message.type === "ACCOUNT_DELETED") {
+        const session = await matchingSession(message.token);
+        const response = await fetch(`${API_URL}/api/auth/session`, {
+            headers: {Authorization: `Bearer ${session.token}`}, signal: AbortSignal.timeout(15000)
+        });
+        if (response.status !== 401) throw new Error("Account deletion could not be verified.");
+        await chrome.storage.local.remove([draftKey(session.userId, "pending"), draftKey(session.userId, "manual"), "token"]);
+        return {};
+    }
     if (message.type === "CLEAR_EXPIRED_TOKEN") {
         const { token } = await chrome.storage.local.get("token");
         if (message.token && token === message.token) await chrome.storage.local.remove("token");

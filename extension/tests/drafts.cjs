@@ -74,6 +74,15 @@ async function main(){
   context.fetch=async()=>({status:409,ok:false,json:async()=>({job:{_id:'existing'}})});
   assert.equal((await services.namespace.saveJob({url:'https://example.test'},a)).job._id,'existing');
   passed.push('Save retry recovers the existing application from a duplicate response');
+  context.fetch=async(url,options)=>({status:tokens[options.headers.Authorization.slice(7)]?200:401,ok:true,json:async()=>({userId:tokens[options.headers.Authorization.slice(7)]})});
+  await auth(a);
+  assert.equal((await send({type:'ACCOUNT_DELETED',token:a},true)).success,false);
+  delete tokens[a];
+  assert.equal((await send({type:'ACCOUNT_DELETED',token:a},true)).success,true);
+  assert.equal(data.token,undefined);
+  assert.equal(data[`draft:000000000000000000000001:pending`],undefined);
+  assert.ok(data[`draft:000000000000000000000002:pending`]);
+  passed.push('Verified account deletion clears only the connected owner drafts and token');
   passed.forEach(message=>console.log(`PASS ${message}`));console.log(`${passed.length} checks passed`);
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

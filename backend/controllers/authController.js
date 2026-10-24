@@ -22,6 +22,9 @@ async function signup(req, res) {
         if (password.length < 8) {
             return res.status(400).json({ error: "Password must be at least 8 characters long" });
         }
+        if (Buffer.byteLength(password, "utf8") > 72) {
+            return res.status(400).json({ error: "Password is too long. Use at most 72 UTF-8 bytes (some characters use more than one byte)." });
+        }
 
         const normalizedEmail = email.trim().toLowerCase();
 
@@ -87,7 +90,7 @@ async function login(req, res) {
             email: normalizedEmail
         });
 
-        if (!user) {
+        if (!user || user.deleting) {
             return res.status(401).json({
                 error: "Invalid email or password"
             });

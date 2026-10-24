@@ -94,10 +94,14 @@ export async function saveJob(job, sessionToken) {
 }
 
 
-async function request(...args) {
+async function request(url, options) {
+    const signal = AbortSignal.timeout(url.endsWith("/extract") ? 120000 : 30000);
     try {
-        return await fetch(...args);
+        const response = await fetch(url, { ...options, signal });
+        // Keep the same deadline while reading the response body.
+        return { ok: response.ok, status: response.status, signal, json: () => response.json() };
     } catch {
+        if (signal.aborted) throw new Error("The request timed out. Please try again. Your pending draft is preserved; a save may already have completed.");
         throw new Error("Could not reach the backend. Check your connection and try again. If saving, retrying will not create a duplicate.");
     }
 }
@@ -113,6 +117,7 @@ async function readResponse(response, token) {
         if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error();
         return data;
     } catch {
+        if (response.signal?.aborted) throw new Error("The response timed out. Your pending draft is preserved; retrying a save will recover an application already saved.");
         throw new Error(response.ok
             ? "The backend returned an unexpected response. Please try again."
             : "The backend could not complete the request (HTTP " + response.status + "). Please try again.");

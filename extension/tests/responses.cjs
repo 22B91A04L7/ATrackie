@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../src/services/jobService.js'), 'utf8')
   .replace(/^import .*\r?\n/gm, '').replaceAll('export async function', 'async function');
 let response, cleared;
-const context = { API_URL: 'http://localhost:5000',
+const context = { AbortSignal, API_URL: 'http://localhost:5000',
   fetch: async () => { if (response instanceof Error) throw response; return response; },
   getAuthToken: async () => 'active', clearAuthToken: async token => { cleared = token; }
 };
@@ -28,5 +28,17 @@ vm.createContext(context); vm.runInContext(source, context);
   assert.equal((await context.saveJob({})).alreadySaved, true);
   response = { status: 201, ok: true, json: async () => ({job: {_id: 'saved-id'}}) };
   assert.equal((await context.saveJob({})).job._id, 'saved-id');
+  let duration;
+  const signal = {aborted: false};
+  context.AbortSignal = {timeout(ms) {duration = ms; return signal;}};
+  context.fetch = async () => {signal.aborted = true; throw new Error('aborted');};
+  await assert.rejects(context.saveJob({}), /timed out/);
+  assert.equal(duration, 30000);
+  signal.aborted = false;
+  await assert.rejects(context.extractJob('text'), /timed out/);
+  assert.equal(duration, 120000);
+  signal.aborted = false;
+  context.fetch = async () => ({status: 200, ok: true, json: async () => {signal.aborted = true; throw new Error('aborted');}});
+  await assert.rejects(context.saveJob({}), /response timed out/);
   console.log('PASS: non-JSON 401/502 and offline handling on all job requests; invalid success rejected; save/retry preserved');
 })().catch(error => { console.error(error); process.exitCode = 1; });

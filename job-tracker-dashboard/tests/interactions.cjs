@@ -22,12 +22,10 @@ const read = file => fs.readFileSync(path.join(__dirname, '../src', file), 'utf8
   await context.confirmStatusChange();
   assert.equal(result, undefined); assert.equal(error, 'Conflict: refresh');
   const manual = read('pages/ManualEntryPage.jsx');
-  const open = manual.slice(manual.indexOf('  function handleOpenJobPosting'), manual.indexOf('  if (saved)'));
+  const open = manual.slice(manual.indexOf('  function handleGoToDashboard'), manual.indexOf('  if (saved)', manual.indexOf('  function handleGoToDashboard')));
   let destination;
-  const page = {URL, formData: {url: 'https://example.test/job/123'}, window: {location: {assign(url) {destination = url;}}}, setError(value) {error = value;}};
+  const page = {navigate(url) {destination = url;}};
   vm.createContext(page); vm.runInContext(open, page);
-  page.handleOpenJobPosting(); assert.equal(destination, page.formData.url);
-  destination = undefined; page.formData.url = 'javascript:alert(1)'; page.handleOpenJobPosting();
-  assert.equal(destination, undefined); assert.match(error, /HTTP/);
-  console.log('PASS shared status returns server timeline, preserves state on conflict; posting return uses URL and rejects unsafe schemes');
+  page.handleGoToDashboard(); assert.equal(destination, '/jobs');
+  console.log('PASS shared status returns server timeline, preserves state on conflict; manual success returns to dashboard');
 })().catch(error => {console.error(error); process.exitCode = 1;});

@@ -18,6 +18,10 @@ function Signup() {
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+    if (new TextEncoder().encode(password).length > 72) {
+      setError("Password is too long. Use at most 72 UTF-8 bytes; some characters use more than one byte.");
+      return;
+    }
     setLoading(true);
 
     try {

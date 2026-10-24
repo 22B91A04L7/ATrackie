@@ -4,10 +4,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../src/pages/ManualEntryPage.jsx'), 'utf8');
-const submit = source.slice(source.indexOf('  function handleSubmit('), source.indexOf('  function handleOpenJobPosting('));
+const submit = source.slice(source.indexOf('  function handleSubmit('), source.indexOf('  function handleGoToDashboard('));
 function setup(activeToken) {
   const state = { messages: [], error: '', saving: false, saved: false };
   const context = {
+    validateManualJob: () => '', draftKey: 'test-draft', setDraftWarning() {}, setTimeout, clearTimeout,
     saving: false, draftReady: true, pageToken: 'account-a', draftRevision: 'revision-a', EXTENSION_ID: 'test-extension',
     formData: { title: 'Manual job', responsibilities: 'Task one\nTask two', requiredSkills: 'SQL, JS', preferredSkills: '' },
     localStorage: { getItem: () => activeToken },

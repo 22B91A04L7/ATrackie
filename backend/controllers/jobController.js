@@ -151,6 +151,12 @@ async function createJob(req, res) {
             ]
         });
 
+        // An account deletion may overlap a save already in flight.
+        const owner = await require("../models/User").exists({_id: req.user.userId, deleting: {$ne: true}});
+        if (!owner) {
+            await Job.deleteOne({_id: job._id, userId: req.user.userId});
+            return res.status(401).json({error: "This account is no longer active."});
+        }
         res.status(201).json({
             message: "Job application saved",
             job
