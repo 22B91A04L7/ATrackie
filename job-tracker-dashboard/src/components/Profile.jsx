@@ -1,3 +1,4 @@
+import LoadingFeedback from "./LoadingFeedback";
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
@@ -106,7 +107,7 @@ export default function Profile({ onClose }) {
     <div className="profile-heading"><div><p className="eyebrow">{deleted ? 'ATrackie' : 'Your workspace'}</p><h2 id="profile-title">{deleted ? 'Account deleted' : confirming ? 'Delete account' : 'My profile'}</h2></div>{!deleted && <button type="button" className="profile-close" aria-label="Close profile" onClick={onClose} disabled={busy}>×</button>}</div>
     <div className="profile-body">
     {deleted ? <div className="profile-success" role="status"><span className="profile-success-icon" aria-hidden="true">✓</span><p>Your account and saved applications have been permanently deleted.</p><p className="profile-success-note">{cleanup || 'Clearing connected extension drafts…'}</p>{!busy && <><p className="profile-success-redirect">Taking you to signup in 3 seconds…</p><Link to="/signup" replace>Go to signup now</Link></>}</div> : <>
-      {!user && !error && <p>Loading profile…</p>}
+      {!user && !error && <LoadingFeedback label="Loading profile..." />}
       {user && !confirming && <><div className="profile-identity"><span className="profile-avatar" aria-hidden="true">{user.name?.trim().slice(0, 1).toUpperCase() || 'A'}</span><div><h3>{user.name}</h3><p>ATrackie account</p></div></div><h3 className="profile-section-title">Account details</h3><dl className="profile-details"><div><dt>Email address</dt><dd>{user.email}</dd></div><div><dt>Member since</dt><dd>{new Date(user.createdAt).toLocaleDateString(undefined, {year:'numeric', month:'long', day:'numeric'})}</dd></div></dl></>}
       {user && !confirming && <section className="profile-danger"><h3>Delete account</h3><p>Permanently remove your account and saved applications.</p><button type="button" className="profile-delete" onClick={() => {setError(''); setConfirming(true);}}>Delete my account</button></section>}
       {confirming && <form onSubmit={removeAccount} className="profile-delete-form">
@@ -114,6 +115,7 @@ export default function Profile({ onClose }) {
         <div className="form-field"><label htmlFor="delete-password">Current password</label><PasswordInput id="delete-password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} required disabled={busy} /></div>
         <div className="form-field"><label htmlFor="delete-confirmation">Type DELETE to confirm</label><input id="delete-confirmation" value={confirmation} onChange={e => setConfirmation(e.target.value)} required pattern="DELETE" disabled={busy} autoComplete="off" /></div>
         {error && <p ref={deleteErrorRef} tabIndex={-1} className="error" role="alert">{error}</p>}
+        <LoadingFeedback active={busy} label="Deleting account..." />
         <div className="profile-actions"><button type="button" className="logout-button" disabled={busy} onClick={() => {setConfirming(false); setPassword(''); setConfirmation(''); setError('');}}>Cancel</button><button className="profile-delete" type="submit" disabled={busy || confirmation !== 'DELETE' || !password}>{busy ? 'Deleting…' : 'Permanently delete account'}</button></div>
       </form>}
     </>}

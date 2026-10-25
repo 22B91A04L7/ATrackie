@@ -6,7 +6,7 @@ export function connectExtension(token) {
       reject(new Error("Extension connection is unavailable. Reload the extension and open https://atrackie.vercel.app in the same Chrome profile."));
       return;
     }
-    const timer = setTimeout(() => reject(new Error("The extension did not respond. Reload it and try connecting again.")), 20000);
+    const timer = setTimeout(() => reject(new Error("The extension did not respond. Reload it and try connecting again.")), 95000);
     try {
       chrome.runtime.sendMessage(EXTENSION_ID, { type: "AUTHENTICATE", token }, (response) => {
         clearTimeout(timer);

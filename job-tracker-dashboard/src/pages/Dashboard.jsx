@@ -1,3 +1,4 @@
+import LoadingFeedback from "../components/LoadingFeedback";
 import { apiRequest } from "../utils/apiRequest";
 import { useEffect, useState } from "react";
 import Job from "../components/Job";
@@ -185,6 +186,7 @@ function Dashboard() {
         <section className="state-card" aria-live="polite">
           <div className="loading-indicator" aria-hidden="true" />
           <h2>Loading applications...</h2>
+          <LoadingFeedback label="Fetching your applications..." />
           <p>Preparing your job application workspace.</p>
         </section>
       </main>
@@ -354,6 +356,7 @@ function Dashboard() {
                 tracker.
               </p>
 
+              <LoadingFeedback active={deleting} label="Deleting applications..." />
               {deleteError && (
                 <p className="bulk-delete-error" role="alert">
                   {deleteError}

@@ -1,3 +1,4 @@
+import LoadingFeedback from "../components/LoadingFeedback";
 import { useEffect, useState } from "react";
 
 function AuthPage() {
@@ -49,6 +50,7 @@ function AuthPage() {
               : "Connecting extension"}
         </h1>
         <p className="auth-message">{message}</p>
+        <LoadingFeedback active={status === "loading"} label="Connecting your account..." />
         <p className="auth-support">
           {status === "success"
             ? "You can close this page and continue tracking jobs."

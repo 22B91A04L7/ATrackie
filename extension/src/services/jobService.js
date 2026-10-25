@@ -95,7 +95,7 @@ export async function saveJob(job, sessionToken) {
 
 
 async function request(url, options) {
-    const signal = AbortSignal.timeout(url.endsWith("/extract") ? 120000 : 30000);
+    const signal = AbortSignal.timeout(url.endsWith("/extract") ? 180000 : 90000);
     try {
         const response = await fetch(url, { ...options, signal });
         // Keep the same deadline while reading the response body.
