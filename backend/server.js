@@ -14,6 +14,13 @@ app.use(cors());
 app.use(express.json());
 app.use(require("./middlewares/validateInput").inputError);
 
+// Lightweight readiness response: no query, AI call, or account data.
+app.get('/api/health', (req, res) => {
+    const ready = mongoose.connection.readyState === 1;
+    res.set('Cache-Control', 'no-store');
+    res.status(ready ? 200 : 503).json({ status: ready ? 'ok' : 'starting' });
+});
+
 // API routes
 app.use("/api", jobRoutes);
 app.use("/api/auth", authRoutes);

@@ -1,3 +1,4 @@
+import LoadingFeedback from "./components/LoadingFeedback";
 import { useState, useEffect, useRef } from "react";
 import { getActiveTab } from "./utils/chrome";
 import "./App.css";
@@ -27,6 +28,7 @@ function getSourceFromUrl(url) {
 }
 
 function App() {
+  const [activity, setActivity] = useState({ label: "Working...", kind: "backend" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [jobData, setJobData] = useState(null);
@@ -104,9 +106,10 @@ function App() {
     };
   }, []);
 
-  function beginOperation() {
+  function beginOperation(label = "Working...", kind = "backend") {
     if (busy.current || !sessionRef.current) return null;
     busy.current = true;
+    setActivity({ label, kind });
     setError("");
     return { session: sessionRef.current, generation: generation.current };
   }
@@ -117,7 +120,7 @@ function App() {
 
   //handles raw text extraction from web page
   async function handleGetJobDetails() {
-    const operation = beginOperation();
+    const operation = beginOperation("Reading job details...", "extraction");
     if (!operation) return;
     setLoading(true);
     setError("");
@@ -170,7 +173,7 @@ function App() {
 
   // AI-extracted data is tracked as-is, no edit step.
   async function handleTrackJob() {
-    const operation = beginOperation();
+    const operation = beginOperation("Preparing job details...", "backend");
     if (!operation) return;
     setSaving(true);
     try {
@@ -210,7 +213,7 @@ function App() {
     });
   }
   async function handleStartManualEntry() {
-    const operation = beginOperation();
+    const operation = beginOperation("Opening manual entry...", "local");
     if (!operation) return;
     setLoading(true);
     try {
@@ -245,7 +248,7 @@ function App() {
   }
 
   async function handleApplied() {
-    const operation = beginOperation();
+    const operation = beginOperation("Saving application...", "backend");
     if (!operation) return;
     setSaving(true);
     try {
@@ -267,7 +270,7 @@ function App() {
   }
 
   async function handleDiscard() {
-    const operation = beginOperation();
+    const operation = beginOperation("Discarding draft...", "local");
     if (!operation) return;
     setSaving(true);
     try {
@@ -285,7 +288,7 @@ function App() {
   }
 
   async function handleRestoreLegacy() {
-    const operation = beginOperation();
+    const operation = beginOperation("Restoring drafts...", "local");
     if (!operation) return;
     setSaving(true);
     try {
@@ -346,6 +349,7 @@ function App() {
         className={`extension-body extension-step-${step}`}
         aria-live="polite"
       >
+        <LoadingFeedback active={loading || saving} label={activity.label} kind={activity.kind} />
         {hasLegacy && (
           <section className="state-panel">
             <h2>Restore earlier drafts?</h2>

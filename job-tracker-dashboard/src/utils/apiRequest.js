@@ -1,6 +1,6 @@
 // Preserve each caller's existing 401 navigation while sharing error handling.
 export async function apiRequest(url, options) {
-  const signal = AbortSignal.timeout(30000);
+  const signal = AbortSignal.timeout(90000);
   const authorization = options?.headers?.Authorization;
   const requestToken = authorization?.startsWith("Bearer ") ? authorization.slice(7) : null;
   const checkSession = () => {

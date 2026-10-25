@@ -4,12 +4,12 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const source=fs.readFileSync(path.join(__dirname,'../src/App.jsx'),'utf8');
-const helpers=source.slice(source.indexOf('  function beginOperation()'),source.indexOf('  //handles raw text'));
+const helpers=source.slice(source.indexOf('  function beginOperation('),source.indexOf('  //handles raw text'));
 const applied=source.slice(source.indexOf('  async function handleApplied()'),source.indexOf('  async function handleDiscard()'));
 function setup(saveJob){
   const state={error:'',saving:false,step:'pending',removed:0,saved:null};
   const context={busy:{current:false},generation:{current:0},sessionRef:{current:{token:'A',userId:'A'}},pendingJob:{job:{title:'A job'},revision:'r1'},
-    setError(v){state.error=v},setSaving(v){state.saving=v},setLoading(){},setPendingJob(v){state.pending=v},setSavedJob(v){state.saved=v},setStep(v){state.step=v},
+    setActivity(){},setError(v){state.error=v},setSaving(v){state.saving=v},setLoading(){},setPendingJob(v){state.pending=v},setSavedJob(v){state.saved=v},setStep(v){state.step=v},
     saveJob,async removePendingJob(session,revision){assert.equal(session.token,'A');assert.equal(revision,'r1');state.removed++;return {removed:true}},console:{error(){}}};
   vm.createContext(context);vm.runInContext(helpers+applied,context);return {context,state};
 }

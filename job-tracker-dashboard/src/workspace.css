@@ -214,3 +214,12 @@
 .profile-success .profile-success-note { color: var(--muted); font-size: 12px; }
 .profile-success .profile-success-redirect { padding-top: 12px; border-top: 1px solid var(--border); color: var(--muted); font-size: 13px; }
 .profile-success a { color: var(--accent); font-size: 13px; font-weight: 650; }
+
+/* Compact request feedback; elapsed time is not a completion estimate. */
+.request-feedback { display: flex; align-items: flex-start; gap: 9px; margin: 10px 0; padding: 10px 12px; border: 1px solid #dce4f5; border-radius: 8px; background: #f3f6ff; color: #344563; text-align: left; }
+.request-feedback p { margin: 0; font-size: 13px; line-height: 1.45; }
+.request-feedback-note { display: block; margin-top: 4px; font-size: 12px; }
+.request-feedback small { display: block; margin-top: 4px; color: #52617a; font-size: 12px; font-variant-numeric: tabular-nums; }
+.request-feedback-spinner { flex: 0 0 14px; width: 14px; height: 14px; margin-top: 2px; border: 2px solid #c7d3ef; border-top-color: #365edc; border-radius: 50%; animation: request-spin .8s linear infinite; }
+@keyframes request-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .request-feedback-spinner { animation: none; } }

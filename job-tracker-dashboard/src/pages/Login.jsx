@@ -13,19 +13,22 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const [connectionFailed, setConnectionFailed] = useState(false);
 
   async function connectAccount(token) {
+    setConnecting(true);
     try {
       await connectExtension(token);
       navigate("/jobs");
     } catch (error) {
       setConnectionFailed(true);
       setError(`You are signed in, but the extension is not connected. ${error.message}`);
-    }
+    } finally { setConnecting(false); }
   }
 
   async function retryConnection() {
+    if (loading) return;
     setLoading(true);
     setError("");
     try {
@@ -37,6 +40,7 @@ function Login() {
 
   async function handleLogin(event) {
     event.preventDefault();
+    if (loading) return;
     setError("");
     setLoading(true);
     setConnectionFailed(false);
@@ -121,7 +125,7 @@ function Login() {
 
           <button className="auth-submit" type="submit" disabled={loading}>
             {loading && <span className="button-spinner" aria-hidden="true" />}
-            <span>{loading ? "Signing in..." : "Sign in"}</span>
+            <span>{loading ? (connecting ? "Connecting..." : "Signing in...") : "Sign in"}</span>
           </button>
         </form>
 
