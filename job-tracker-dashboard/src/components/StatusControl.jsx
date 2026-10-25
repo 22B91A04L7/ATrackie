@@ -1,3 +1,4 @@
+import LoadingFeedback from "./LoadingFeedback";
 import { apiRequest } from "../utils/apiRequest";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -122,6 +123,7 @@ export default function StatusControl({ job, onStatusChange, disabled = false })
             </p>
           </div>
 
+          <LoadingFeedback active={saving} label="Updating status..." />
           <div className="status-confirmation-actions">
             <button
               type="button"

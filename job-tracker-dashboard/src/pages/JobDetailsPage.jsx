@@ -1,3 +1,4 @@
+import LoadingFeedback from "../components/LoadingFeedback";
 import { apiRequest } from "../utils/apiRequest";
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
@@ -109,6 +110,7 @@ function JobDetailsPage() {
         <section className="state-card" aria-live="polite">
           <div className="loading-indicator" aria-hidden="true" />
           <h2>Loading job details...</h2>
+          <LoadingFeedback label="Fetching job details..." />
           <p>Fetching the full application record.</p>
         </section>
       </main>

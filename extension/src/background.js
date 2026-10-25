@@ -50,7 +50,7 @@ async function handleMessage(message) {
         if (previousToken && previousToken !== message.token) await chrome.storage.local.remove("token");
         const response = await fetch(`${API_URL}/api/auth/session`, {
             headers: { Authorization: `Bearer ${message.token}` },
-            signal: AbortSignal.timeout(15000)
+            signal: AbortSignal.timeout(90000)
         });
         if (!response.ok || (await response.json()).userId !== account.userId) {
             throw new Error("Could not verify this account. Please sign in again.");

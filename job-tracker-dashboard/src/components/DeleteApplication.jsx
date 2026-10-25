@@ -1,3 +1,4 @@
+import LoadingFeedback from "./LoadingFeedback";
 function DeleteApplication({ isOpen, isDeleting, error, onCancel, onConfirm }) {
   if (!isOpen) {
     return null;
@@ -19,6 +20,7 @@ function DeleteApplication({ isOpen, isDeleting, error, onCancel, onConfirm }) {
           This will permanently remove this application from your tracker.
         </p>
 
+        <LoadingFeedback active={isDeleting} label="Deleting application..." />
         {error && (
           <p className="delete-error" role="alert">
             {error}

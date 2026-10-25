@@ -17,6 +17,7 @@ function Signup() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (loading || success) return;
     setError("");
     if (new TextEncoder().encode(password).length > 72) {
       setError("Password is too long. Use at most 72 UTF-8 bytes; some characters use more than one byte.");
@@ -129,7 +130,7 @@ function Signup() {
             </p>
           )}
 
-          <button className="auth-submit" type="submit" disabled={loading}>
+          <button className="auth-submit" type="submit" disabled={loading || Boolean(success)}>
             {loading && <span className="button-spinner" aria-hidden="true" />}
             <span>{loading ? "Creating account..." : "Create account"}</span>
           </button>

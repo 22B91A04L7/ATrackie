@@ -30,7 +30,7 @@ const call = () => context.apiRequest('http://localhost:5000/api/jobs');
   response.json = async () => { active = 'new-session'; return {error: 'expired'}; };
   await assert.rejects(context.apiRequest('http://localhost:5000/api/jobs', {headers: {Authorization: 'Bearer old-session'}}), /account changed/);
   const deadline = {aborted: false};
-  context.AbortSignal = {timeout(ms) {assert.equal(ms, 30000); return deadline;}};
+  context.AbortSignal = {timeout(ms) {assert.equal(ms, 90000); return deadline;}};
   context.fetch = async () => {deadline.aborted = true; throw new Error('aborted');};
   await assert.rejects(call(), /timed out/);
   deadline.aborted = false;
